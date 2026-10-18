@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 
 from database import create_jobs_table, get_connection, get_job_count, insert_jobs
 
+from roles import classify_role
+
 load_dotenv()
 
 APP_ID = os.getenv("ADZUNA_APP_ID")
@@ -66,6 +68,7 @@ def jobs_to_dataframe(jobs):
                 "salary_max": job.get("salary_max"),
                 "category": job.get("category", {}).get("label"),
                 "job_url": job.get("redirect_url"),
+                "role_category": classify_role(job.get("title")),
             }
         )
 

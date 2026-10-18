@@ -25,10 +25,17 @@ def create_jobs_table(conn):
             salary_min DOUBLE,
             salary_max DOUBLE,
             category VARCHAR,
-            job_url VARCHAR
+            job_url VARCHAR,
+            role_category VARCHAR
         )
         """
     )
+    conn.execute(
+    """
+    ALTER TABLE jobs
+    ADD COLUMN IF NOT EXISTS role_category VARCHAR
+    """
+)
 
 
 def insert_jobs(conn, df: pd.DataFrame):
@@ -47,6 +54,7 @@ def insert_jobs(conn, df: pd.DataFrame):
             salary_min,
             salary_max,
             category,
+            role_category,
             job_url
         FROM jobs_df
         """
