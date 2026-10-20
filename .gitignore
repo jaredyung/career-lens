@@ -1,6 +1,13 @@
 .venv/
 .env
+.env.*
 __pycache__/
+*.py[cod]
 .ipynb_checkpoints/
 .DS_Store
+.vscode/
+.idea/
 data/*.duckdb
+data/*.duckdb.wal
+backups/
+.pytest_cache/

@@ -1,49 +1,35 @@
-from database import get_connection
+"""Optional read-only CLI summary using the dashboard's salary definition."""
+
+from database import get_connection, get_job_count
 
 
 def main():
-    conn = get_connection()
-
-    print("\nTotal jobs:")
-    print(
-        conn.execute(
+    with get_connection(read_only=True) as conn:
+        print("\nTotal jobs:")
+        print(get_job_count(conn))
+        print("\nTop companies:")
+        print(conn.execute(
             """
-            SELECT COUNT(*)
+            SELECT company, COUNT(*) AS job_count
             FROM jobs
-            """
-        ).fetchone()[0]
-    )
-
-    print("\nTop companies:")
-    print(
-        conn.execute(
-            """
-            SELECT
-                company,
-                COUNT(*) AS job_count
-            FROM jobs
+            WHERE company IS NOT NULL
             GROUP BY company
             ORDER BY job_count DESC
             LIMIT 10
             """
-        ).fetchdf()
-    )
-
-    print("\nAverage salary:")
-    print(
-        conn.execute(
+        ).fetchdf())
+        print("\nEstimated salaries (range midpoints):")
+        print(conn.execute(
             """
             SELECT
-                ROUND(AVG(salary_min), 2) AS avg_salary_min,
-                ROUND(AVG(salary_max), 2) AS avg_salary_max
+                ROUND(AVG((salary_min + salary_max) / 2), 2)
+                    AS estimated_average_salary,
+                ROUND(MEDIAN((salary_min + salary_max) / 2), 2)
+                    AS estimated_median_salary
             FROM jobs
-            WHERE salary_min IS NOT NULL
-              AND salary_max IS NOT NULL
+            WHERE salary_min IS NOT NULL AND salary_max IS NOT NULL
             """
-        ).fetchdf()
-    )
-
-    conn.close()
+        ).fetchdf())
 
 
 if __name__ == "__main__":

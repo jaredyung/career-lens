@@ -1,3 +1,16 @@
+"""Title-based classification; run directly only to reclassify stored postings."""
+
+from database import create_jobs_table, get_connection
+
+ROLES = [
+    "Data Scientist",
+    "Data Engineer",
+    "Data Analyst",
+    "Machine Learning Engineer",
+    "Analytics Engineer",
+]
+
+
 def classify_role(title):
     if not title:
         return "Other"
@@ -41,34 +54,22 @@ def classify_role(title):
     return "Other"
 
 
-from database import get_connection, create_jobs_table
-
-
 def update_existing_roles():
-    conn = get_connection()
-
-    create_jobs_table(conn)
-
-    jobs = conn.execute(
-        """
-        SELECT job_id, title
-        FROM jobs
-        """
-    ).fetchall()
-
-    for job_id, title in jobs:
-        role = classify_role(title)
-
-        conn.execute(
-            """
-            UPDATE jobs
-            SET role_category = ?
-            WHERE job_id = ?
-            """,
-            [role, job_id],
-        )
-
-    conn.close()
+    """Apply current rules to existing rows without changing job URLs."""
+    with get_connection() as conn:
+        create_jobs_table(conn)
+        jobs = conn.execute("SELECT job_id, title FROM jobs").fetchall()
+        conn.begin()
+        try:
+            for job_id, title in jobs:
+                conn.execute(
+                    "UPDATE jobs SET role_category = ? WHERE job_id = ?",
+                    [classify_role(title), job_id],
+                )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
 
 
 if __name__ == "__main__":
